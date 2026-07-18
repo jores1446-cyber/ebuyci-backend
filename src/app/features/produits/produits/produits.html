@@ -1,0 +1,75 @@
+<div class="page-header">
+  <h2>Produits</h2>
+  <button class="btn-primary" (click)="toggleForm()">
+    {{ showForm() ? 'Annuler' : '+ Nouveau produit' }}
+  </button>
+</div>
+
+<div class="form-card" *ngIf="showForm()">
+  <h3>Nouveau produit</h3>
+
+  <form (ngSubmit)="onSubmit()">
+    <div class="form-row">
+      <div class="field">
+        <label>Référence</label>
+        <input type="text" [(ngModel)]="reference" name="reference" placeholder="ex: REF-0400" />
+      </div>
+
+      <div class="field">
+        <label>Nom du produit</label>
+        <input type="text" [(ngModel)]="nom" name="nom" placeholder="ex: Chaussures running" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label>Catégorie</label>
+        <select [(ngModel)]="categorieId" name="categorieId">
+          <option [ngValue]="null">-- Choisir --</option>
+          <option *ngFor="let cat of categories()" [ngValue]="cat.id">{{ cat.nom }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Prix d'achat (F)</label>
+        <input type="number" [(ngModel)]="prixAchat" name="prixAchat" placeholder="0" />
+      </div>
+
+      <div class="field">
+        <label>Prix de vente (F)</label>
+        <input type="number" [(ngModel)]="prixVente" name="prixVente" placeholder="0" />
+      </div>
+    </div>
+
+    <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+
+    <button type="submit" class="btn-primary">Enregistrer</button>
+  </form>
+</div>
+
+<p *ngIf="loading()">Chargement des produits...</p>
+
+<table *ngIf="!loading()">
+  <thead>
+    <tr>
+      <th>Référence</th>
+      <th>Produit</th>
+      <th>Catégorie</th>
+      <th>Prix d'achat</th>
+      <th>Prix de vente</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let produit of produits()">
+      <td>{{ produit.reference }}</td>
+      <td>{{ produit.nom }}</td>
+      <td>{{ produit.categorie.nom }}</td>
+      <td>{{ produit.prixAchat | number:'1.0-0' }} F</td>
+      <td>{{ produit.prixVente | number:'1.0-0' }} F</td>
+      <td>
+        <button class="btn-delete" (click)="supprimer(produit.id)">Supprimer</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
