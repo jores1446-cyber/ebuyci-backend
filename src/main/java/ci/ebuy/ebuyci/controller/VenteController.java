@@ -56,6 +56,7 @@ public class VenteController {
 
         for (LigneVente ligne : vente.getLignes()) {
             ligne.setVente(vente);
+            ligne.setPrixAchatUnitaire(ligne.getProduit().getPrixAchat());
             Stock stock = stockRepository
                     .findByProduitIdAndMagasinId(ligne.getProduit().getId(), vente.getMagasin().getId())
                     .get();
@@ -64,6 +65,46 @@ public class VenteController {
         }
 
         vente.setDateVente(java.time.LocalDateTime.now());
+
+        if ("CREDIT".equalsIgnoreCase(vente.getModePaiement())) {
+            if (vente.getClient() == null) {
+                return ResponseEntity.badRequest().body("Un client est requis pour une vente à crédit.");
+            }
+            if (vente.getMontantPaye() == null) {
+                vente.setMontantPaye(0.0);
+            }
+        } else {
+            vente.setMontantPaye(vente.getMontantTotal());
+        }
+
         return ResponseEntity.ok(venteRepository.save(vente));
+    }
+
+    @GetMapping("/{id}/benefice")
+    public ResponseEntity<Double> getBeneficeByVente(@PathVariable Long id) {
+        return venteRepository.findById(id)
+                .map(vente -> {
+                    double benefice = vente.getLignes().stream()
+                            .mapToDouble(l -> (l.getPrixUnitaire() - l.getPrixAchatUnitaire()) * l.getQuantite())
+                            .sum();
+                    return ResponseEntity.ok(benefice);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/benefice/periode")
+    public ResponseEntity<Double> getBeneficePeriode(
+            @RequestParam String debut,
+            @RequestParam String fin) {
+        java.time.LocalDateTime debutDt = java.time.LocalDateTime.parse(debut);
+        java.time.LocalDateTime finDt = java.time.LocalDateTime.parse(fin);
+
+        double benefice = venteRepository.findAll().stream()
+                .filter(v -> !v.getDateVente().isBefore(debutDt) && !v.getDateVente().isAfter(finDt))
+                .flatMap(v -> v.getLignes().stream())
+                .mapToDouble(l -> (l.getPrixUnitaire() - l.getPrixAchatUnitaire()) * l.getQuantite())
+                .sum();
+
+        return ResponseEntity.ok(benefice);
     }
 }

@@ -31,4 +31,7 @@ public class LigneVente {
 
     @Column(name = "prix_unitaire", nullable = false)
     private Double prixUnitaire;
+
+    @Column(name = "prix_achat_unitaire", nullable = false)
+    private Double prixAchatUnitaire;
 }

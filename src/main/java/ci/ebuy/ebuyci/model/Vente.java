@@ -28,11 +28,18 @@ public class Vente {
     @JoinColumn(name = "vendeur_id", nullable = false)
     private Utilisateur vendeur;
 
+    @ManyToOne
+    @JoinColumn(name = "client_id")
+    private Client client;
+
     @Column(name = "date_vente", nullable = false)
     private LocalDateTime dateVente = LocalDateTime.now();
 
     @Column(name = "montant_total", nullable = false)
     private Double montantTotal;
+
+    @Column(name = "montant_paye", nullable = false)
+    private Double montantPaye = 0.0;
 
     @Column(name = "mode_paiement", nullable = false)
     private String modePaiement;
