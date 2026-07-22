@@ -4,6 +4,8 @@ import ci.ebuy.ebuyci.model.LigneVente;
 import ci.ebuy.ebuyci.model.Stock;
 import ci.ebuy.ebuyci.model.Vente;
 import ci.ebuy.ebuyci.repository.StockRepository;
+import ci.ebuy.ebuyci.repository.ProduitRepository;
+import ci.ebuy.ebuyci.model.Produit;
 import ci.ebuy.ebuyci.repository.VenteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,9 @@ public class VenteController {
 
     @Autowired
     private StockRepository stockRepository;
+
+    @Autowired
+    private ProduitRepository produitRepository;
 
     @GetMapping
     public List<Vente> getAll() {
@@ -55,7 +60,10 @@ public class VenteController {
 
         for (LigneVente ligne : vente.getLignes()) {
             ligne.setVente(vente);
-            ligne.setPrixAchatUnitaire(ligne.getProduit().getPrixAchat());
+            Produit produitComplet = produitRepository.findById(ligne.getProduit().getId())
+                    .orElseThrow(() -> new RuntimeException("Produit introuvable"));
+            ligne.setProduit(produitComplet);
+            ligne.setPrixAchatUnitaire(produitComplet.getPrixAchat());
             Stock stock = stockRepository
                     .findByProduitIdAndMagasinId(ligne.getProduit().getId(), vente.getMagasin().getId())
                     .get();
