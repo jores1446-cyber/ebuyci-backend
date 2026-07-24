@@ -1,4 +1,5 @@
 package ci.ebuy.ebuyci.security;
+
 import ci.ebuy.ebuyci.repository.UtilisateurRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -28,7 +29,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                      @NonNull HttpServletResponse response,
                                      @NonNull FilterChain filterChain) throws ServletException, IOException {
-
         final String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -37,17 +37,23 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         final String token = authHeader.substring(7);
-        final String identifiant = jwtUtil.extractUsername(token);
 
-        if (identifiant != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = utilisateurRepository.findByIdentifiant(identifiant).orElse(null);
-
-            if (userDetails != null && jwtUtil.isTokenValid(token, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+        try {
+            final String identifiant = jwtUtil.extractUsername(token);
+            if (identifiant != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = utilisateurRepository.findByIdentifiant(identifiant).orElse(null);
+                if (userDetails != null && jwtUtil.isTokenValid(token, userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (Exception e) {
+            // Token invalide, expiré ou malformé : on l'ignore simplement.
+            // La requête continue sans authentification (accès public si la route le permet,
+            // sinon elle sera rejetée normalement par les règles d'autorisation).
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
